@@ -2,13 +2,13 @@ from temporalio import workflow
 
 with workflow.unsafe.imports_passed_through():
     from data.data_types import MCPServerConfig
-    from activities.activities import mcp_handshake, mcp_request, process_prompt_with_llm
+    from activities.activities import Activities
 
 @workflow.signal
 async def add_server(self, server_config: MCPServerConfig):
     """Signal to add a new MCP server."""
-    handshake_result = await workflow.execute_activity(
-        mcp_handshake,
+    handshake_result = await workflow.execute_activity_method(
+        Activities.mcp_handshake,
         args=[server_config],
         start_to_close_timeout=30
     )
@@ -41,8 +41,8 @@ class MCPHostWorkflow:
                 break
             
             #Get the LLM's response
-            llm_response = await workflow.execute_activity(
-                process_prompt_with_llm,
+            llm_response = await workflow.execute_activity_method(
+                Activities.process_prompt_with_llm,
                 args=[prompt, self.llm_context],
                 start_to_close_timeout=30
             )
@@ -54,8 +54,8 @@ class MCPHostWorkflow:
                     "action": "read_file",
                     "params": llm_response["params"]
                 }
-                server_response = await workflow.execute_activity(
-                    mcp_request,
+                server_response = await workflow.execute_activity_method(
+                    Activities.mcp_request,
                     args=[self.server_configs["file_server"], request],
                     start_to_close_timeout=30
                 )
