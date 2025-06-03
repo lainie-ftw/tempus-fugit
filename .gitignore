@@ -4,6 +4,7 @@
 # Python cache & compiled files
 __pycache__/
 *.py[cod]
+*.pyc
 *.pyd
 *.pyo
 *.so
