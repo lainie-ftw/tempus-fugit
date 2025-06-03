@@ -1,0 +1,18 @@
+[tool.poetry]
+package-mode = false  # Disable package mode
+name = "tempus-fugit"
+version = "0.1.0"
+description = ""
+authors = ["Laine Smith, Joshua Smith"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+temporalio = "^1.10.0"  # Added temporalio dependency
+requests = "^2.32.3"
+flask = "^3.1.1"
+dotenv = "^0.9.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
