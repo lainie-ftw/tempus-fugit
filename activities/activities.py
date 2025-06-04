@@ -10,7 +10,7 @@ class Activities:
 
     # Temporal Activity Definitions
     @activity.defn
-    async def mcp_handshake(server_config: MCPServerConfig) -> Dict[str, Any]:
+    async def mcp_handshake(self, server_config: MCPServerConfig) -> Dict[str, Any]:
         """Activity to perform handshake with an MCP server."""
         try:
             response = requests.post(
@@ -26,7 +26,7 @@ class Activities:
             raise Exception(f"Error in handshake with {server_config.server_id}: {str(e)}")
 
     @activity.defn
-    async def mcp_request(server_config: MCPServerConfig, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def mcp_request(self, server_config: MCPServerConfig, request: Dict[str, Any]) -> Dict[str, Any]:
         """Activity to send a request to an MCP server."""
         try:
             response = requests.post(
@@ -43,7 +43,7 @@ class Activities:
 
     # Mock LLM Activity
     @activity.defn
-    async def process_prompt_with_llm(prompt: str, context: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def process_prompt_with_llm(self, prompt: str, context: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Mock LLM activity to process a user prompt."""
         # In a real implementation, call an LLM API
         if "read file" in prompt.lower():

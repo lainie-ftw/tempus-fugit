@@ -8,23 +8,22 @@ from activities.activities import Activities
 from mcp_host_workflow import MCPHostWorkflow
 
 async def main():
-    print("DEBUG: Making the client")
+    # Get a client and init the list of activities
     client = await get_temporal_client()
-    activities = Activities()
-    # Run the worker
-    print("DEBUG: getting the worker")
+    activityList = Activities()
+    # Create the worker
     with concurrent.futures.ThreadPoolExecutor(max_workers=100) as activity_executor:
         worker = Worker(
             client, 
             task_queue=TEMPORAL_TASK_QUEUE, 
             workflows=[MCPHostWorkflow], 
             activities=[
-                activities.mcp_handshake, 
-                activities.mcp_request, 
-                activities.process_prompt_with_llm],
+                activityList.mcp_handshake, 
+                activityList.mcp_request, 
+                activityList.process_prompt_with_llm],
             activity_executor=activity_executor,
         )
-    print("DEBUG: running the worker")
+    # Run the worker
     await worker.run()
 
 

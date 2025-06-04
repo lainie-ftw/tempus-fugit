@@ -2,7 +2,7 @@
 .DS_Store
 
 # Python cache & compiled files
-__pycache__/
+*__pycache__/
 *.py[cod]
 *.pyc
 *.pyd
