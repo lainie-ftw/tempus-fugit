@@ -1,22 +1,39 @@
 # Tempus Fugit
 
-This is a Temporalio project that demonstrates the use of Temporal workflows and activities.
+This is a lightweight, durable [MCP Host](https://modelcontextprotocol.io/introduction#general-architecture) implemented in [Temporal](https://temporal.io/).
 
 ## Getting Started
+1. **Get the code**
+    ```bash
+    git clone https://github.com/joshmsmith/tempus-fugit
+    ```
+2. **[Setup Temporal](https://learn.temporal.io/getting_started/)**
+    (or connect to a running Temporal Service)
+    ```bash
+    temporal server start-dev
+    ```
 
-1. **Install Dependencies:**
+3. **Install Dependencies:**
    ```bash
    poetry install
    ```
 
-2. **Run the Worker:**
+4. **Configuration**
+    - copy .env.example to your .env
+    - make changes if you want
+
+5. **Start the MCP Server**
+    ```bash
+    poetry run python mcp_server.py
+    ```
+5. **Run the Worker:**
    ```bash
    poetry run python worker.py
    ```
 
-3. **Start a Workflow:**
+6. **Start a Workflow:**
    ```bash
-   poetry run python mcp_host_temporal.py
+   poetry run python run_workflow.py
    ```
 
 ## Project Structure
@@ -25,3 +42,4 @@ This is a Temporalio project that demonstrates the use of Temporal workflows and
 - `worker.py`: Worker script to handle workflow execution.
 - `poetry.lock`: Dependency lock file.
 - `pyproject.toml`: Project configuration.
+
