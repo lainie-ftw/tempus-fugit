@@ -10,6 +10,9 @@ with workflow.unsafe.imports_passed_through():
 class MCPHostWorkflow:
     def __init__(self):
         self.server_configs = {}  # Store server configurations
+        # TODO load initial servers e.g. from a config file
+        self.chat_ended = False  # Flag to indicate if the chat has ended
+        self.confirmed = False  # Flag to indicate if the user has confirmed the end of the chat
         self.llm_context = []  # Store conversation history
         self.prompts = []  # Store incoming prompts
 
@@ -28,9 +31,11 @@ class MCPHostWorkflow:
 
             prompt = self.prompts.pop(0)
             if prompt.lower() == "exit":
-                break
+                print("Chat ended.")
+                return "Chat ended."
             
             # Get the LLM's response
+            # TODO add MCP server context to inform the LLM about available servers
             llm_response = await workflow.execute_activity_method(
                 Activities.process_prompt_with_llm,
                 args=[prompt, self.llm_context],
@@ -58,6 +63,10 @@ class MCPHostWorkflow:
 
             result = llm_response.get("response", "No response generated") + response_add
             print(f"Response: {result}")
+
+            if self.chat_ended: #TODO  set this flag when the user wants to end the chat
+                print("Chat ended.")
+                return "Chat ended."
 
     @workflow.signal
     async def add_server(self, server_config: MCPServerConfig):
