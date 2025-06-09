@@ -1,8 +1,10 @@
 from datetime import timedelta
+from typing import Any, Dict
 from temporalio import workflow
+from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
-    from data.data_types import MCPServerConfig
+    from data.data_types import SendToLLM, ExecuteTool
     from activities.activities import Activities
     from fastmcp import Client
 
@@ -17,6 +19,23 @@ class MCPHostWorkflow:
 
     @workflow.run
     async def run(self, initial_prompt: str) -> str:
+        retry_policy = RetryPolicy(
+            maximum_attempts=3,
+            maximum_interval=timedelta(seconds=5),
+        )
+
+        # Set up clients for default MCP servers
+        #file_client = Client(config)
+        #self.mcp_clients.append(file_client)  
+        #if this doesn't work, keep the config in the list and create the client in the activity - but how to avoid re-creating it?  
+        
+        #server_config_file = MCPServerConfig(server_id="file_server", server_url="http://localhost:8000")
+        #server_config_hass = MCPServerConfig(server_id="home_assistant", server_url="http://localhost:8123")
+        
+        # Signal the workflow to add the server
+        #await handle.signal("add_server", file_client)
+        #await handle.signal("add_server", hass_client)
+
         # Interactive loop
         print(initial_prompt)
         self.prompts.append(initial_prompt)  # Start with the initial prompt
@@ -33,19 +52,24 @@ class MCPHostWorkflow:
                 break
             
             # Get the LLM's response
+            self.llm_context.append({"user": prompt})
+            send_to_llm = SendToLLM(prompt=prompt, context=self.llm_context)
             llm_response = await workflow.execute_activity_method(
                 Activities.process_prompt_with_llm,
-                args=[prompt, self.llm_context],
-                start_to_close_timeout=timedelta(seconds=30)
+                send_to_llm,
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=retry_policy,
             )
-            self.llm_context.append({"user": prompt, "llm": llm_response})
-
+            self.llm_context.append({"llm": llm_response})
             # Check if the LLM response requires an MCP server - ?
             # Call activity 
+            #Mock the params to send
+            tool_pack = ExecuteTool(tool_name="greet", args={"name": prompt})
             response = await workflow.execute_activity_method(
                 Activities.execute_tool,
-                args=[self.mcp_clients[0], "greet", "User"],  # Example tool call
-                start_to_close_timeout=timedelta(seconds=30)
+                tool_pack,  # Example tool call
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=retry_policy,
             )
             print(f"Response: {response}")
 

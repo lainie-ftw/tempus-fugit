@@ -1,6 +1,8 @@
 from fastmcp import FastMCP
+import uvicorn
 
 mcp = FastMCP(name="file_server")
+http_app = mcp.http_app()
 
 @mcp.tool()
 def greet(name: str) -> str:
@@ -9,4 +11,5 @@ def greet(name: str) -> str:
 
 if __name__ == "__main__":
     # To use a different transport, e.g., HTTP:
-    mcp.run(transport="streamable-http", host="127.0.0.1", port=8000)
+    uvicorn.run(http_app, host="0.0.0.0", port=8000)
+#    mcp.run(transport="streamable-http", host="localhost", port=8000)
