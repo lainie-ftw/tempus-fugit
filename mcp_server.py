@@ -1,18 +1,12 @@
-from flask import Flask, request, jsonify
+from fastmcp import FastMCP
 
-app = Flask(__name__)
+mcp = FastMCP(name="file_server")
 
-@app.route("/handshake", methods=["POST"])
-def handshake():
-    return jsonify({"capabilities": ["read_file"], "protocol_version": "1.0"})
-
-@app.route("/request", methods=["POST"])
-def handle_request():
-    data = request.json
-    if data.get("action") == "read_file":
-        # Simulate reading a file
-        return jsonify({"success": True, "data": "Sample file contents"})
-    return jsonify({"success": False, "error": "Unknown action"})
+@mcp.tool()
+def greet(name: str) -> str:
+    """Greet a user by name."""
+    return f"Hello, {name}!"
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    # To use a different transport, e.g., HTTP:
+    mcp.run(transport="streamable-http", host="127.0.0.1", port=8000)

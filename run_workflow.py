@@ -6,6 +6,8 @@ from data.data_types import MCPServerConfig
 from shared.config import TEMPORAL_TASK_QUEUE, get_temporal_client
 from mcp_host_workflow import MCPHostWorkflow
 
+from fastmcp import Client
+
 
 async def main():
     # Create client connected to server at the given address
@@ -22,11 +24,15 @@ async def main():
     print(f"Workflow started with ID: {handle.id}")
 
     # Add server config for the tester MCP server
-    server_config = MCPServerConfig(server_id="file_server", server_url="http://localhost:8000")
-        #hass: 
+   # hass_client = Client("http://localhost:8123", "home_assistant")
+    file_client = Client("http://localhost:8000")    
+    
+    #server_config_file = MCPServerConfig(server_id="file_server", server_url="http://localhost:8000")
+    #server_config_hass = MCPServerConfig(server_id="home_assistant", server_url="http://localhost:8123")
+    
     # Signal the workflow to add the server
-    await handle.signal("add_server", server_config)
-
+    await handle.signal("add_server", file_client)
+    #await handle.signal("add_server", hass_client)
 
     while True:
         prompt = input("Prompt: ")

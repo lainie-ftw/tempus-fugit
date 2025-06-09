@@ -4,6 +4,7 @@ from temporalio import workflow
 with workflow.unsafe.imports_passed_through():
     from data.data_types import MCPServerConfig
     from activities.activities import Activities
+    from fastmcp import Client
 
 # Temporal Workflow Definition
 @workflow.defn
@@ -12,6 +13,7 @@ class MCPHostWorkflow:
         self.server_configs = {}  # Store server configurations
         self.llm_context = []  # Store conversation history
         self.prompts = []  # Store incoming prompts
+        self.mcp_clients = []
 
     @workflow.run
     async def run(self, initial_prompt: str) -> str:
@@ -38,38 +40,19 @@ class MCPHostWorkflow:
             )
             self.llm_context.append({"user": prompt, "llm": llm_response})
 
-            response_add = ""
-            # Check if the LLM response requires an MCP server
-            if llm_response.get("action") == "read_file" and "file_server" in self.server_configs:
-                workflow.logger.warning("About to do MCP server thangs.")
-                request = {
-                    "action": "read_file",
-                    "params": llm_response["params"]
-                }
-                server_response = await workflow.execute_activity_method(
-                    Activities.mcp_request,
-                    args=[self.server_configs["file_server"], request],
-                    start_to_close_timeout=timedelta(seconds=30)
-                )
-                if server_response.get("success"):
-                    response_add = f" File contents: {server_response.get('data')}"
-                else:
-                    response_add = f" Error reading file: {server_response.get('error', 'Unknown error')}"
-
-            result = llm_response.get("response", "No response generated") + response_add
-            print(f"Response: {result}")
+            # Check if the LLM response requires an MCP server - ?
+            # Call activity 
+            response = await workflow.execute_activity_method(
+                Activities.execute_tool,
+                args=[self.mcp_clients[0], "greet", "User"],  # Example tool call
+                start_to_close_timeout=timedelta(seconds=30)
+            )
+            print(f"Response: {response}")
 
     @workflow.signal
-    async def add_server(self, server_config: MCPServerConfig):
-        """Signal to add a new MCP server."""
-        handshake_result = await workflow.execute_activity_method(
-            Activities.mcp_handshake,
-            args=[server_config],
-            start_to_close_timeout=timedelta(seconds=30)
-        )
-        if handshake_result.get("capabilities"):
-            self.server_configs[server_config.server_id] = server_config
-            workflow.logger.info(f"Added server {server_config.server_id} with capabilities: {handshake_result['capabilities']}")
+    async def add_server(self, client: Client):
+        """Signal to add a new MCP server by adding the client to the list. Implementation so far assumes they're all remote servers."""
+        self.mcp_clients.append(client)
 
     @workflow.signal
     async def receive_prompt(self, prompt: str):
