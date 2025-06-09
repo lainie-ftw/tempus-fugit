@@ -4,8 +4,8 @@ from typing import Any, Dict, List
 # Configuration for MCP servers
 @dataclass
 class MCPServerConfig:
-    server_id: str
-    server_url: str
+    name: str
+    url: str
 
 @dataclass
 class SendToLLM:
@@ -14,5 +14,6 @@ class SendToLLM:
 
 @dataclass
 class ExecuteTool:
+    server_name: str
     tool_name: str
     args: Dict[str, Any]

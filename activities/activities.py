@@ -4,6 +4,7 @@ from fastmcp import Client
 
 from data.data_types import ExecuteTool, SendToLLM
 
+#TODO: look into MCP client session - from mcp import ClientSession, potential example here: https://modelcontextprotocol.io/quickstart/client
 class Activities:
     def __init__(self):
         self.mcp_server_config = {
@@ -11,18 +12,37 @@ class Activities:
                 "file_client": {
                     "url": "http://localhost:8000/mcp",
                     "transport": "streamable-http"
+                },
+                "home_assistant": {
+                    "url": "http://localhost:8123/mcp_server/sse",
+                    "transport": "sse",
+                    "auth": "token", #***
+                    "env": {
+                        "API_ACCESS_TOKEN": "token"
+                    }
                 }
             }
         }
+#send HASS API key in auth header - maybe headers: or auth: httpx.Auth or env: API_ACCESS_TOKEN
 
     # Temporal Activity Definitions
 
     @activity.defn
     async def execute_tool(self, tool_pack: ExecuteTool):
         client = Client(self.mcp_server_config)
+        #client = Client("http://localhost:8080/mcp")
         async with client:
-            result = await client.call_tool(tool_pack.tool_name, tool_pack.args)
+            combined_tool_name = tool_pack.server_name + "_" + tool_pack.tool_name
+            result = await client.call_tool(combined_tool_name, tool_pack.args)
             return result
+        
+    @activity.defn
+    async def list_tools(self, tool_pack: ExecuteTool):
+        client = Client(self.mcp_server_config)
+        #client = Client("http://localhost:8080/mcp")
+        async with client:
+            tools = await client.list_tools()
+            return tools
 
     # Mock LLM Activity
     @activity.defn

@@ -17,7 +17,8 @@ async def main():
         workflows=[MCPHostWorkflow], 
         activities=[
             activity_list.execute_tool, 
-            activity_list.process_prompt_with_llm],
+            activity_list.process_prompt_with_llm,
+            activity_list.list_tools],
     )
     # Run the worker
     await worker.run()

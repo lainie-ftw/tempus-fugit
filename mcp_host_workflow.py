@@ -61,22 +61,35 @@ class MCPHostWorkflow:
                 retry_policy=retry_policy,
             )
             self.llm_context.append({"llm": llm_response})
-            # Check if the LLM response requires an MCP server - ?
+            
             # Call activity 
             #Mock the params to send
-            tool_pack = ExecuteTool(tool_name="greet", args={"name": prompt})
+            tool_pack_file = ExecuteTool(server_name="file_client", tool_name="greet", args={"name": prompt})
+            tool_list = await workflow.execute_activity_method(
+                Activities.list_tools,
+                tool_pack_file,
+                start_to_close_timeout=timedelta(seconds=30),
+                retry_policy=retry_policy,                
+            )
+            print(f"Tool list: {tool_list}")
+
             response = await workflow.execute_activity_method(
                 Activities.execute_tool,
-                tool_pack,  # Example tool call
+                tool_pack_file,  # Example tool call
                 start_to_close_timeout=timedelta(seconds=30),
                 retry_policy=retry_policy,
             )
             print(f"Response: {response}")
 
-    @workflow.signal
-    async def add_server(self, client: Client):
-        """Signal to add a new MCP server by adding the client to the list. Implementation so far assumes they're all remote servers."""
-        self.mcp_clients.append(client)
+            #tool_pack_hass = ExecuteTool(server_name="home_assistant", tool_name="HassTurnOff", args={"name": prompt})
+            #response = await workflow.execute_activity_method(
+            #    Activities.execute_tool,
+            #    tool_pack_hass,  # Example tool call
+            #    start_to_close_timeout=timedelta(seconds=30),
+            #    retry_policy=retry_policy,
+            #)
+            print(f"Response: {response}")
+
 
     @workflow.signal
     async def receive_prompt(self, prompt: str):
@@ -88,3 +101,8 @@ class MCPHostWorkflow:
     def get_prompts(self) -> any:
         """Query handler to retrieve the list of prompts."""
         return self.prompts
+    
+    @workflow.query
+    def get_llm_context(self) -> any:
+        """Query handler to retrieve the list of prompts."""
+        return self.llm_context
