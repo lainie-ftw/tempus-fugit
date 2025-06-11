@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from temporalio import activity
 from fastmcp import Client
+from litellm import completion
 
 from data.data_types import ExecuteTool, SendToLLM
 
