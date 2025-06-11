@@ -15,34 +15,28 @@ class Activities:
                 },
                 "home_assistant": {
                     "url": "http://localhost:8123/mcp_server/sse",
-                    "transport": "sse",
-                    "auth": "token", #***
-                    "env": {
-                        "API_ACCESS_TOKEN": "token"
-                    }
+                    "auth": "token"
                 }
             }
         }
-#send HASS API key in auth header - maybe headers: or auth: httpx.Auth or env: API_ACCESS_TOKEN
 
     # Temporal Activity Definitions
 
     @activity.defn
-    async def execute_tool(self, tool_pack: ExecuteTool):
-        client = Client(self.mcp_server_config)
-        #client = Client("http://localhost:8080/mcp")
-        async with client:
-            combined_tool_name = tool_pack.server_name + "_" + tool_pack.tool_name
-            result = await client.call_tool(combined_tool_name, tool_pack.args)
-            return result
-        
-    @activity.defn
     async def list_tools(self, tool_pack: ExecuteTool):
         client = Client(self.mcp_server_config)
-        #client = Client("http://localhost:8080/mcp")
         async with client:
             tools = await client.list_tools()
             return tools
+        
+    @activity.defn
+    async def execute_tool(self, tool_pack: ExecuteTool):
+        client = Client(self.mcp_server_config)
+        async with client:
+            #Need to create a combined tool name because our config has multiple servers in it.
+            combined_tool_name = tool_pack.server_name + "_" + tool_pack.tool_name
+            result = await client.call_tool(combined_tool_name, tool_pack.args)
+            return result
 
     # Mock LLM Activity
     @activity.defn
