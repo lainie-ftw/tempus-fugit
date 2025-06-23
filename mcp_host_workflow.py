@@ -13,8 +13,12 @@ with workflow.unsafe.imports_passed_through():
 class MCPHostWorkflow:
     def __init__(self):
         self.server_configs = {}  # Store server configurations
+        # TODO load initial servers e.g. from a config file
+        self.chat_ended = False  # Flag to indicate if the chat has ended
+        self.confirmed = False  # Flag to indicate if the user has confirmed the end of the chat
         self.llm_context = []  # Store conversation history
         self.prompts = []  # Store incoming prompts
+        self.processing_prompts = False  # Flag to indicate if prompts are being processed
         self.mcp_clients = []
 
     @workflow.run
@@ -46,12 +50,16 @@ class MCPHostWorkflow:
                 lambda: bool(self.prompts)
                  # or self.chat_ended or self.confirmed
             )
-
+            processing_prompts = True  # Set flag to indicate prompts are being processed
             prompt = self.prompts.pop(0)
             if prompt.lower() == "exit":
-                break
+                print("Chat ended.")
+                return "Chat ended."
             
             # Get the LLM's response
+
+            # TODO maybe add MCP server context to inform the LLM about available tools
+            
             self.llm_context.append({"user": prompt})
             send_to_llm = SendToLLM(prompt=prompt, context=self.llm_context)
             llm_response = await workflow.execute_activity_method(
@@ -80,6 +88,10 @@ class MCPHostWorkflow:
                 retry_policy=retry_policy,
             )
             print(f"Response: {response}")
+            
+            if self.chat_ended: #TODO  set this flag when the user wants to end the chat
+                print("Chat ended.")
+                return "Chat ended."
 
             #tool_pack_hass = ExecuteTool(server_name="home_assistant", tool_name="HassTurnOff", args={"name": prompt})
             #response = await workflow.execute_activity_method(
@@ -89,6 +101,8 @@ class MCPHostWorkflow:
             #    retry_policy=retry_policy,
             #)
             print(f"Response: {response}")
+            processing_prompts = False  # Reset flag after processing
+
 
 
     @workflow.signal
@@ -96,6 +110,17 @@ class MCPHostWorkflow:
         """Signal to receive a prompt from the user."""
         workflow.logger.warning(f"Got signal, prompt is {prompt}")
         self.prompts.append(prompt)
+
+    @workflow.update
+    async def receive_prompte_and_respond(self, prompt: str) -> str:
+        """Update handler to receive a prompt and respond."""
+        workflow.logger.warning(f"Received prompt: {prompt}")
+        self.prompts.append(prompt)
+        await workflow.wait_condition(
+            lambda: bool(self.processing_prompts != True)  # Wait until prompts are being processed
+            )       
+
+        return self.llm_context[-1].get("response", "No response generated")  # Return the last response from the LLM context
 
     @workflow.query
     def get_prompts(self) -> any:

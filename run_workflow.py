@@ -13,14 +13,21 @@ async def main():
     handle = await client.start_workflow(
         MCPHostWorkflow.run,
         start_msg,
-        id=f"mcphost-laine-{uuid.uuid4()}",
+
+        id=f"mcphost-laine-{uuid.uuid4()}",# todo pull username from config
+
         task_queue=TEMPORAL_TASK_QUEUE,
     )
     print(f"Workflow started with ID: {handle.id}")
 
     while True:
         prompt = input("Prompt: ")
-        await handle.signal(MCPHostWorkflow.receive_prompt, prompt)
+        #await handle.signal(MCPHostWorkflow.receive_prompt, prompt)
+        update_response = await handle.execute_update(
+            MCPHostWorkflow.receive_prompte_and_respond,
+            args=[prompt],
+        )
+        print(f"TF: {update_response}")
 
 
 if __name__ == "__main__":
