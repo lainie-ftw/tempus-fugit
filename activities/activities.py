@@ -1,51 +1,50 @@
-from typing import Dict, Any, List
+from typing import Dict, Any
 from temporalio import activity
-import requests
+from fastmcp import Client
+from litellm import completion
 
-from data.data_types import MCPServerConfig
+from data.data_types import ExecuteTool, SendToLLM
 
+#TODO: look into MCP client session - from mcp import ClientSession, potential example here: https://modelcontextprotocol.io/quickstart/client
 class Activities:
     def __init__(self):
-        pass
+        self.mcp_server_config = {
+            "mcpServers": {
+                "file_client": {
+                    "url": "http://localhost:8000/mcp",
+                    "transport": "streamable-http"
+                },
+                "home_assistant": {
+                    "url": "http://localhost:8123/mcp_server/sse",
+                    "auth": "token"
+                }
+            }
+        }
 
     # Temporal Activity Definitions
-    @activity.defn
-    async def mcp_handshake(self, server_config: MCPServerConfig) -> Dict[str, Any]:
-        """Activity to perform handshake with an MCP server."""
-        try:
-            response = requests.post(
-                f"{server_config.server_url}/handshake",
-                json={"client_id": server_config.server_id, "protocol_version": "1.0"},
-                timeout=5
-            )
-            if response.status_code == 200:
-                return response.json()
-            else:
-                raise Exception(f"Handshake failed with {server_config.server_id}: {response.status_code}")
-        except Exception as e:
-            raise Exception(f"Error in handshake with {server_config.server_id}: {str(e)}")
 
     @activity.defn
-    async def mcp_request(self, server_config: MCPServerConfig, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Activity to send a request to an MCP server."""
-        try:
-            response = requests.post(
-                f"{server_config.server_url}/request",
-                json=request,
-                timeout=10
-            )
-            if response.status_code == 200:
-                return response.json()
-            else:
-                raise Exception(f"Request failed with {server_config.server_id}: {response.status_code}")
-        except Exception as e:
-            raise Exception(f"Error sending request to {server_config.server_id}: {str(e)}")
+    async def list_tools(self, tool_pack: ExecuteTool):
+        client = Client(self.mcp_server_config)
+        async with client:
+            tools = await client.list_tools()
+            return tools
+        
+    @activity.defn
+    async def execute_tool(self, tool_pack: ExecuteTool):
+        client = Client(self.mcp_server_config)
+        async with client:
+            #Need to create a combined tool name because our config has multiple servers in it.
+            combined_tool_name = tool_pack.server_name + "_" + tool_pack.tool_name
+            result = await client.call_tool(combined_tool_name, tool_pack.args)
+            return result
 
     # Mock LLM Activity
     @activity.defn
-    async def process_prompt_with_llm(self, prompt: str, context: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def process_prompt_with_llm(self, send_to_llm: SendToLLM) -> Dict[str, Any]:
         """Mock LLM activity to process a user prompt."""
         # In a real implementation, call an LLM API
+        prompt = send_to_llm.prompt
         if "read file" in prompt.lower():
             return {"action": "read_file", "params": {"filename": prompt.split()[-1]}}
         return {"action": "respond", "response": f"Echo: {prompt}"}

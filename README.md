@@ -20,28 +20,31 @@ This is a lightweight, durable [MCP Host](https://modelcontextprotocol.io/introd
    poetry install
    ```
 
+
 4. **Configuration**
     - copy .env.example to your .env
     - make changes if you want
 
-5. **Start the MCP Server**
+5. **Start the Sample MCP Server**
     ```bash
     poetry run python mcp_server.py
     ```
-5. **Run the Worker:**
+6. **Run the Worker:**
+
    ```bash
    poetry run python worker.py
    ```
 
-6. **Start a Workflow:**
+7. **Start the Workflow:**
    ```bash
    poetry run python run_workflow.py
    ```
 
 ## Project Structure
-
-- `mcp_host_temporal.py`: Main script to start workflows.
-- `worker.py`: Worker script to handle workflow execution.
-- `poetry.lock`: Dependency lock file.
-- `pyproject.toml`: Project configuration.
+- `worker.py`: Temporal Worker
+- `mcp_host_workflow.py`: Workflow definition
+- `activities/activities.py`: Activities class
+- `data/data_types.py`: Specific datacass definitions for Activity execution
+- `mcp_server.py`: POC MCP server to try out connecting to MCP servers/tools via an MCP Client defined in an activity
+- `run_workflow.py`: Helper to start a workflow
 
