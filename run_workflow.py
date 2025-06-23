@@ -16,7 +16,7 @@ async def main():
     handle = await client.start_workflow(
         MCPHostWorkflow.run,
         start_msg,
-        id=f"mcphost-{uuid.uuid4()}",
+        id=f"mcphost-josh-{uuid.uuid4()}", # todo pull username from config
         task_queue=TEMPORAL_TASK_QUEUE,
     )
     print(f"Workflow started with ID: {handle.id}")
@@ -30,7 +30,12 @@ async def main():
 
     while True:
         prompt = input("Prompt: ")
-        await handle.signal(MCPHostWorkflow.receive_prompt, prompt)
+        #await handle.signal(MCPHostWorkflow.receive_prompt, prompt)
+        update_response = await handle.execute_update(
+            MCPHostWorkflow.receive_prompte_and_respond,
+            args=[prompt],
+        )
+        print(f"TF: {update_response}")
 
     # Simulate sending prompts to the workflow
  #   prompts = ["Hello", "How are you?", "exit"]

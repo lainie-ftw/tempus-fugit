@@ -15,6 +15,7 @@ class MCPHostWorkflow:
         self.confirmed = False  # Flag to indicate if the user has confirmed the end of the chat
         self.llm_context = []  # Store conversation history
         self.prompts = []  # Store incoming prompts
+        self.processing_prompts = False  # Flag to indicate if prompts are being processed
 
     @workflow.run
     async def run(self, initial_prompt: str) -> str:
@@ -28,7 +29,7 @@ class MCPHostWorkflow:
                 lambda: bool(self.prompts)
                  # or self.chat_ended or self.confirmed
             )
-
+            processing_prompts = True  # Set flag to indicate prompts are being processed
             prompt = self.prompts.pop(0)
             if prompt.lower() == "exit":
                 print("Chat ended.")
@@ -62,7 +63,10 @@ class MCPHostWorkflow:
                     response_add = f" Error reading file: {server_response.get('error', 'Unknown error')}"
 
             result = llm_response.get("response", "No response generated") + response_add
+            # store tool results
+            self.llm_context.append({"response": result})
             print(f"Response: {result}")
+            processing_prompts = False  # Reset flag after processing
 
             if self.chat_ended: #TODO  set this flag when the user wants to end the chat
                 print("Chat ended.")
@@ -85,6 +89,17 @@ class MCPHostWorkflow:
         """Signal to receive a prompt from the user."""
         workflow.logger.warning(f"Got signal, prompt is {prompt}")
         self.prompts.append(prompt)
+
+    @workflow.update
+    async def receive_prompte_and_respond(self, prompt: str) -> str:
+        """Update handler to receive a prompt and respond."""
+        workflow.logger.warning(f"Received prompt: {prompt}")
+        self.prompts.append(prompt)
+        await workflow.wait_condition(
+            lambda: bool(self.processing_prompts != True)  # Wait until prompts are being processed
+            )       
+
+        return self.llm_context[-1].get("response", "No response generated")  # Return the last response from the LLM context
 
     @workflow.query
     def get_prompts(self) -> any:

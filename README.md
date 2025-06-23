@@ -15,6 +15,8 @@ This is a lightweight, durable [MCP Host](https://modelcontextprotocol.io/introd
 
 3. **Install Dependencies:**
    ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
    poetry install
    ```
 
